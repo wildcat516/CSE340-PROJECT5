@@ -204,6 +204,79 @@ struct StatementNode* parse_stmt()
         
         st->print_stmt = parse_print_stmt();
     }
+    else if (ttype == WHILE)
+    {
+        st->type = IF_STMT;
+        
+        struct IfStatement* if_st;
+        if_st = ALLOC(struct IfStatement);
+//  st->if_stmt = parse_if_stmt();
+        st->if_stmt = if_st;
+        
+        ttype = getToken();
+        if (ttype == NUM)
+        {
+            struct ValueNode* numNode;
+            numNode = ALLOC(struct ValueNode);
+            if_st->condition_operand1 = numNode;
+            if_st->condition_operand1->value = atoi(token);
+        }
+        else if (ttype == ID)
+        {
+            if_st->condition_operand1 = fndvarTab(token);
+        }
+        
+        ttype = getToken();
+        if (ttype == GREATER | ttype == LESS | ttype == NOTEQUAL)
+        {
+            if_st->condition_op = ttype;
+        }
+        
+        ttype = getToken();
+        if (ttype == NUM)
+        {
+            struct ValueNode* numNode;
+            numNode = ALLOC(struct ValueNode);
+            if_st->condition_operand2 = numNode;
+            if_st->condition_operand2->value = atoi(token);
+        }
+        else if (ttype == ID)
+        {
+            if_st->condition_operand2 = fndvarTab(token);
+        }
+
+//  create no_op node        
+        struct StatementNode* no_op;
+        no_op = ALLOC(struct StatementNode);
+        no_op->type = NOOP_STMT;
+
+//  expected to be an iteration to find the lastNode in parse_body
+        struct StatementNode* firstNode;
+        firstNode = parse_body();
+        if_st->true_branch = firstNode;
+        struct StatementNode* lastNode = firstNode;
+        while (lastNode->next != NULL)
+        {
+            lastNode = lastNode->next;
+        }
+        
+        struct StatementNode* gt;
+        gt = ALLOC(struct StatementNode);
+
+        lastNode->next = gt;
+        
+        struct GotoStatement* gt_stmt;
+        gt_stmt = ALLOC(struct GotoStatement);
+        
+        gt->type = GOTO_STMT;
+        gt->goto_stmt = gt_stmt;
+        
+        gt_stmt->target = st;
+        
+        if_st->false_branch = no_op;
+        
+        st->next = no_op;
+    }
     
     return st;
 }
